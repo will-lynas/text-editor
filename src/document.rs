@@ -28,23 +28,23 @@ impl Document {
             file_type,
         })
     }
-    
+
     pub fn file_type(&self) -> String {
         self.file_type.name()
     }
-    
+
     pub fn row(&self, index: usize) -> Option<&Row> {
         self.rows.get(index)
     }
-    
+
     pub fn is_empty(&self) -> bool {
         self.rows.is_empty()
     }
-    
+
     pub fn len(&self) -> usize {
         self.rows.len()
     }
-    
+
     fn insert_newline(&mut self, at: &Position) {
         if at.y > self.rows.len() {
             return;
@@ -53,13 +53,11 @@ impl Document {
             self.rows.push(Row::default());
             return;
         }
-        #[allow(clippy::indexing_slicing)]
         let current_row = &mut self.rows[at.y];
         let new_row = current_row.split(at.x);
-        #[allow(clippy::integer_arithmetic)]
         self.rows.insert(at.y + 1, new_row);
     }
-    
+
     pub fn insert(&mut self, at: &Position, c: char) {
         if at.y > self.rows.len() {
             return;
@@ -72,7 +70,6 @@ impl Document {
             row.insert(0, c);
             self.rows.push(row);
         } else {
-            #[allow(clippy::indexing_slicing)]
             let row = &mut self.rows[at.y];
             row.insert(at.x, c);
         }
@@ -85,8 +82,7 @@ impl Document {
             row.is_highlighted = false;
         }
     }
-    
-    #[allow(clippy::integer_arithmetic, clippy::indexing_slicing)]
+
     pub fn delete(&mut self, at: &Position) {
         let len = self.rows.len();
         if at.y >= len {
@@ -103,7 +99,7 @@ impl Document {
         }
         self.unhighlight_rows(at.y);
     }
-    
+
     pub fn save(&mut self) -> Result<(), Error> {
         if let Some(file_name) = &self.file_name {
             let mut file = fs::File::create(file_name)?;
@@ -116,12 +112,11 @@ impl Document {
         }
         Ok(())
     }
-    
+
     pub fn is_dirty(&self) -> bool {
         self.dirty
     }
-    
-    #[allow(clippy::indexing_slicing)]
+
     pub fn find(&self, query: &str, at: &Position, direction: SearchDirection) -> Option<Position> {
         if at.y >= self.rows.len() {
             return None;
@@ -140,7 +135,7 @@ impl Document {
         };
         for _ in start..end {
             if let Some(row) = self.rows.get(position.y) {
-                if let Some(x) = row.find(&query, position.x, direction) {
+                if let Some(x) = row.find(query, position.x, direction) {
                     position.x = x;
                     return Some(position);
                 }
@@ -157,7 +152,7 @@ impl Document {
         }
         None
     }
-    
+
     pub fn highlight(&mut self, word: &Option<String>, until: Option<usize>) {
         let mut start_with_comment = false;
         let until = if let Some(until) = until {
@@ -169,10 +164,9 @@ impl Document {
         } else {
             self.rows.len()
         };
-        #[allow(clippy::indexing_slicing)]
         for row in &mut self.rows[..until] {
             start_with_comment = row.highlight(
-                &self.file_type.highlighting_options(),
+                self.file_type.highlighting_options(),
                 word,
                 start_with_comment,
             );

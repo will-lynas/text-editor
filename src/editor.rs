@@ -63,7 +63,7 @@ impl Editor {
             }
         }
     }
-    
+
     pub fn default() -> Self {
         let args: Vec<String> = env::args().collect();
         let mut initial_status = String::from("HELP: Ctrl-F = find | Ctrl-S = save | Ctrl-Q = quit");
@@ -80,7 +80,7 @@ impl Editor {
         };
         Self {
             should_quit: false,
-            terminal: Terminal::default().expect("Failed to initialize terminal"),
+            terminal: Terminal::default(),
             document,
             cursor_position: Position::default(),
             offset: Position::default(),
@@ -109,7 +109,7 @@ impl Editor {
         Terminal::cursor_show();
         Terminal::flush()
     }
-    
+
     fn save(&mut self) {
         if self.document.file_name.is_none() {
             let new_name = self.prompt("Save as: ", |_, _, _| {}).unwrap_or(None);
@@ -125,7 +125,7 @@ impl Editor {
             self.status_message = StatusMessage::from("Error writing file!".to_string());
         }
     }
-    
+
     fn search(&mut self) {
         let old_position = self.cursor_position.clone();
         let mut direction = SearchDirection::Forward;
@@ -146,7 +146,7 @@ impl Editor {
                     if let Some(position) =
                         editor
                             .document
-                            .find(&query, &editor.cursor_position, direction)
+                            .find(query, &editor.cursor_position, direction)
                     {
                         editor.cursor_position = position;
                         editor.scroll();
@@ -163,7 +163,7 @@ impl Editor {
         }
         self.highlighted_word = None;
     }
-    
+
     fn process_keypress(&mut self) -> Result<(), std::io::Error> {
         let pressed_key = Terminal::read_key()?;
         match pressed_key {
@@ -208,7 +208,7 @@ impl Editor {
         }
         Ok(())
     }
-    
+
     fn scroll(&mut self) {
         let Position { x, y } = self.cursor_position;
         let width = self.terminal.size().width as usize;
@@ -225,7 +225,7 @@ impl Editor {
             offset.x = x.saturating_sub(width).saturating_add(1);
         }
     }
-    
+
     fn move_cursor(&mut self, key: Key) {
         let terminal_height = self.terminal.size().height as usize;
         let Position { mut y, mut x } = self.cursor_position;
@@ -290,19 +290,18 @@ impl Editor {
         }
         self.cursor_position = Position { x, y }
     }
-    
+
     fn draw_welcome_message(&self) {
         let mut welcome_message = format!("Hecto editor -- version {}", VERSION);
         let width = self.terminal.size().width as usize;
         let len = welcome_message.len();
-        #[allow(clippy::integer_arithmetic, clippy::integer_division)]
         let padding = width.saturating_sub(len) / 2;
         let spaces = " ".repeat(padding.saturating_sub(1));
         welcome_message = format!("~{}{}", spaces, welcome_message);
         welcome_message.truncate(width);
         println!("{}\r", welcome_message);
     }
-    
+
     pub fn draw_row(&self, row: &Row) {
         let width = self.terminal.size().width as usize;
         let start = self.offset.x;
@@ -310,8 +309,7 @@ impl Editor {
         let row = row.render(start, end);
         println!("{}\r", row)
     }
-    
-    #[allow(clippy::integer_division, clippy::integer_arithmetic)]
+
     fn draw_rows(&self) {
         let height = self.terminal.size().height;
         for terminal_row in 0..height {
@@ -325,7 +323,7 @@ impl Editor {
             }
         }
     }
-    
+
     fn draw_status_bar(&self) {
         let mut status;
         let width = self.terminal.size().width as usize;
@@ -351,7 +349,6 @@ impl Editor {
             self.cursor_position.y.saturating_add(1),
             self.document.len()
         );
-        #[allow(clippy::integer_arithmetic)]
         let len = status.len() + line_indicator.len();
         status.push_str(&" ".repeat(width.saturating_sub(len)));
         status = format!("{}{}", status, line_indicator);
@@ -362,7 +359,7 @@ impl Editor {
         Terminal::reset_fg_color();
         Terminal::reset_bg_color();
     }
-    
+
     fn draw_message_bar(&self) {
         Terminal::clear_current_line();
         let message = &self.status_message;
@@ -372,7 +369,7 @@ impl Editor {
             print!("{}", text);
         }
     }
-    
+
     fn prompt<C>(&mut self, prompt: &str, mut callback: C) -> Result<Option<String>, std::io::Error>
     where
         C: FnMut(&mut Self, Key, &String),
