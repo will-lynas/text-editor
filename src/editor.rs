@@ -102,7 +102,8 @@ impl Editor {
             self.draw_status_bar();
             self.draw_message_bar();
             Terminal::cursor_position(&Position {
-                x: self.cursor_position.x.saturating_sub(self.offset.x),
+                x: self.cursor_position.x.saturating_sub(self.offset.x)
+                    + self.get_margin_size() + 1,
                 y: self.cursor_position.y.saturating_sub(self.offset.y),
             });
         }
@@ -302,20 +303,35 @@ impl Editor {
         println!("{}\r", welcome_message);
     }
 
-    pub fn draw_row(&self, row: &Row) {
+    pub fn draw_row(&self, row: &Row, row_num: usize, margin_width: usize) {
         let width = self.terminal.size().width as usize;
         let start = self.offset.x;
         let end = self.offset.x.saturating_add(width);
         let row = row.render(start, end);
-        println!("{}\r", row)
+        println!("{:margin_width$} {}\r", row_num, row)
+    }
+
+    fn get_margin_size(&self) -> usize {
+        let mut n = self.document.rows.len();
+        if n == 0 {
+            return 1;
+        }
+        let mut count = 0;
+        while n > 0 {
+            n /= 10;
+            count += 1;
+        }
+        count
     }
 
     fn draw_rows(&self) {
+        let margin_size = self.get_margin_size();
         let height = self.terminal.size().height;
         for terminal_row in 0..height {
             Terminal::clear_current_line();
-            if let Some(row) = self.document.row(self.offset.y.saturating_add(terminal_row as usize)) {
-                self.draw_row(row);
+            let index = self.offset.y.saturating_add(terminal_row as usize);
+            if let Some(row) = self.document.row(index) {
+                self.draw_row(row, index, margin_size);
             } else if self.document.is_empty() && terminal_row == height / 3 {
                 self.draw_welcome_message();
             } else {

@@ -7,7 +7,7 @@ use std::io::{Error, Write};
 
 #[derive(Default)]
 pub struct Document {
-    rows: Vec<Row>,
+    pub rows: Vec<Row>,
     pub file_name: Option<String>,
     dirty: bool,
     file_type: FileType,
